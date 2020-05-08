@@ -5,12 +5,30 @@ import random
 from telebot import util
 import pandas as pd
 
-bot = telebot.TeleBot("SEU TOKEN AQUI")
+bot = telebot.TeleBot("YOUR TOKEN HERE")
 
 updates = bot.get_updates()
 
 user_dic={}
 count=0
+
+
+# Copiar a partir daqui
+import unicodedata
+
+# Remove acentuação e passa para minuscula
+def strip_accents(text):
+
+    try:
+        text = unicode(text, 'utf-8')
+    except NameError: # unicode is a default on python 3 
+        pass
+
+    text = unicodedata.normalize('NFD', text)\
+           .encode('ascii', 'ignore')\
+           .decode("utf-8")
+
+    return str(text).lower()
 
 
 partida_forca=0
@@ -87,29 +105,32 @@ def forca_partida(message):
     
     if partida_forca==0:
         
-        # Inicializando vari�veis
+        # Inicializando variáveis
         error = -1
         rodadas = 1
 
         # Base de dados de palavras
-        df = pd.read_csv('forca_palavras.csv', header=None, encoding='latin-1')
+        df = pd.read_csv('forca_palavras2.csv', header=None, encoding='latin-1')
 
         # Palavra escolhida
         randomico = random.randint(0, len(df) - 1)
-        palavra_escolhida = df.iloc[randomico][0]
+        palavra_escolhida = strip_accents(df.iloc[randomico][0])
         dica = df.iloc[randomico][1]
         
         # Gabarito
         print(palavra_escolhida)
 
         # Palavra a ser revelada
-        palavra_atualizada = [' _ ' for i in list(palavra_escolhida)]
+        palavra_atualizada = [' _ ' if i not in [' ',',','.','-','_'] else ' '+i+' ' for i in list(palavra_escolhida)]
         bot.reply_to(message, ''.join(palavra_atualizada) + '\n' + 'DICA: ' + dica)
         
         # Partida em andamento
         partida_forca=1
     
     else:
+        
+        # Função para converter em minuscula e sem acentuacao
+        message.text = strip_accents(message.text)
         
         # Pegar letra soletrada
         escolha = re.findall('/forca (.*)', message.text)
